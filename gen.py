@@ -43,16 +43,32 @@ class QR:
     def get_bin(self, I):
         I = bin(int.from_bytes(I.encode(), 'big'))[2:]
         I = [I[i:i + 8] for i in range(0, len(I), 8)]
-        I = [i + '0' * (8 - len(i)) for i in I]
+        return [i + '0' * (8 - len(i)) for i in I]
 
     def insert_bin(self):
         pass
 
     def bin_path(self):
         br = self.s - self.safe - 1
-        # self.pix[br, br] = (0, 255, 0)
+        pos = [br, br]
+        for b in self.I:
+            self.zig_zag(pos, b)
+        # self.pix[pos, pos] = (0, 255, 0)
 
+    def zig_zag(self, pos, b):
+        for i in range(0, 8, 2):
+            x, y = pos
+            if (x, y) not in self.forbidden:
+                self.pix[x, y] = (0, 0, 0) if b[i] == '1' else (255, 255, 255)
+            else:
+                pass
 
+            if (x - 1, y) not in self.forbidden:
+                self.pix[x - 1, y] = (0, 0, 0) if b[i + 1] == '1' else (255, 255, 255)
+            else:
+                pass
+
+            pos[1] -= 1
 
     def square(self, x, y, size, color=(0, 0, 0), step=1, forbid=True):
         color = (0, 0, 0) if not color else color
@@ -84,6 +100,7 @@ class QR:
         # Insert Timing Patterns
         pos = self.finder_size + g - 1
         inner = self.s - (2 * g) - (2 * self.finder_size)
+        self.square(pos, pos, inner)
         self.square(pos, pos, inner, step=2)
         self.square(pos + 2, pos + 2, inner, (255, 255, 255), 2, False)
 
@@ -99,7 +116,6 @@ class QR:
         self.forbidden.append((x, y))
 
         # Show forbidden spots
-        return
         for pos in self.forbidden:
             x, y = pos
             self.pix[x, y] = (255, 0, 0)
