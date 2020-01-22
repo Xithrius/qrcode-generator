@@ -15,15 +15,18 @@ class QR:
 
         self.dims = dims
         self.s = dims[0]
-        self.I = I
         self.forbidden = []
         self.safe = dims[0] // 10
         self.finder_size = 7
+        self.missing_bin = ['11101100', '00010001']
 
         self.img = Image.new('RGB', self.dims, color='white')
         self.pix = self.img.load()
 
-        self.insert()
+        self.insert_items()
+        self.I = self.get_bin(I)
+        self.bin_path()
+        self.insert_bin()
 
         self.img.save('image.png')
 
@@ -37,7 +40,34 @@ class QR:
         if len(checks) >= 1:
             assert False, checks[0][1]
 
-    def insert(self):
+    def get_bin(self, I):
+        I = bin(int.from_bytes(I.encode(), 'big'))[2:]
+        I = [I[i:i + 8] for i in range(0, len(I), 8)]
+        I = [i + '0' * (8 - len(i)) for i in I]
+
+    def insert_bin(self):
+        pass
+
+    def bin_path(self):
+        br = self.s - self.safe - 1
+        # self.pix[br, br] = (0, 255, 0)
+
+
+
+    def square(self, x, y, size, color=(0, 0, 0), step=1, forbid=True):
+        color = (0, 0, 0) if not color else color
+        for i in range(y, y + size, step):
+            for j in range(x, x + size, step):
+                self.pix[i, j] = color
+                if forbid:
+                    self.forbidden.append((i, j))
+                else:
+                    try:
+                        self.forbidden.remove((i, j))
+                    except ValueError:
+                        pass
+
+    def insert_items(self):
         size = self.finder_size
         g = self.safe
 
@@ -60,26 +90,19 @@ class QR:
         # Insert Alignment pattern(s)
         pos += inner - 1
         for i in range(3):
-            self.square(pos + i, pos + i, 5 - i * 2, (255, 255, 255) if i == 1 else None)
+            self.square(pos + i, pos + i, 5 - (i * 2), (255, 255, 255) if i == 1 else None)
+        
+        # Create dark module
+        x = self.finder_size + self.safe + 1
+        y = self.s - self.safe - self.finder_size - 1
+        self.pix[x, y] = (0, 0, 0)
+        self.forbidden.append((x, y))
 
         # Show forbidden spots
         return
         for pos in self.forbidden:
             x, y = pos
             self.pix[x, y] = (255, 0, 0)
-
-    def square(self, x, y, size, color=(0, 0, 0), step=1, forbid=True):
-        color = (0, 0, 0) if not color else color
-        for i in range(y, y + size, step):
-            for j in range(x, x + size, step):
-                self.pix[i, j] = color
-                if forbid:
-                    self.forbidden.append((i, j))
-                else:
-                    try:
-                        self.forbidden.remove((i, j))
-                    except ValueError:
-                        pass
 
 
 if __name__ == "__main__":
