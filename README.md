@@ -1,2 +1,3 @@
-# QR_Generator
-Generates QR codes from user input.
+# qrcode-generator
+
+Generating QR codes from user input
